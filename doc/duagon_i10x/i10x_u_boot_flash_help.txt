@@ -1,0 +1,92 @@
+i101 Flash via UART description:
+
+Install i101 project files
+
+Goto Make file directory:
+    cd ~/duagon/linux/linux-current/ti-sdk-am335x-evm-05.04.01.00
+
+Setup linux environment:
+    cd bin
+    ./setup-XXXXXXX
+    cd ..
+    
+Compile U-boot    
+    make u-boot_clean
+    make u-boot
+
+Board connection:
+    Be careful, the first PCB version (b001972-002244) has a modified UART
+    Connector, Board will be destroyed if connected to Duagon standard connector. Check this before connecting UART.
+    Connect i101 power supply.
+
+Connect UART with 114000 8 data bits, 1 stop bit (use dev/ttyUSB0) 
+    sudo minicom
+(CCCCCC should be displayed. Otherwise a boot image is present in SPI. For that case use a Jumper to short ETH Boot X4 pins.)
+
+Transfer duagon_i101_spiboot/spl/u-boot-spl.bin
+    Press CTRL-A
+    Press S
+    Select xmodem
+        (sometimes this has to be repeated)
+    (CCC... will arise, timeout possible after this)
+
+Transfer duagon_i101_spiboot/u-boot.bin
+    Press CTRL-A
+    Press S
+    Select ymodem
+        U-BOOT prompt will arise
+
+Transfer duagon_i101_spiboot/MLO.spi
+    loady
+    Press CTRL-A
+    Press S
+    Select ymodem
+    
+Erase SPI U-BOOT-SPL Bootloader
+    sf probe 0
+    sf erase 0 +20000
+
+Flash U-BOOT-SPL image: (all values mean hex values)
+    sf write 82000000 0 20000
+
+Transfer duagon_i101_spiboot/u-boot.bin
+    loady
+    Press CTRL-A
+    Press S
+    Select ymodem
+    
+Erase SPI U-BOOT Bootloader
+    sf probe 0
+    sf erase 20000 +60000
+
+Flash u-BOOT image: (all values mean hex values)
+    sf write 82000000 20000 40000
+    
+Reset Board:
+    reset
+
+Erase SPI U-BOOT Bootloader
+    Not yet defined
+Kernel image can be stored in the arria after U-BOOT-SPL and U-BOOT
+    Not yet defined
+
+Kernel image transfer
+    Not yet defined
+
+Flash Kernel image 
+    Not yet defined
+
+
+
+
+
+Update the U-boot via tftp:
+mw 0x82000000 0xffffffff 0x20000
+tftp 0x82000000 u-boot.bin
+tftp 0x82040000 u-boot.bin
+cmp 0x82000000 0x82040000 0x10000
+sf probe 0
+sf erase 0x20000 0x40000
+sf write 0x82000000 0x20000 0x40000
+sf read 0x83000000 0x20000 0x40000
+cmp 0x82000000 0x83000000 0x10000

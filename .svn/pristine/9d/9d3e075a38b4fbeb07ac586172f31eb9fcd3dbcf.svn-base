@@ -1,0 +1,33 @@
+Flash uboot 1. stage
+setenv autoload no;dhcp;mw 0x82000000 0xffffffff 0x10000;tftp 0x82000000 MLO.spi;tftp 0x82020000 MLO.spi;cmp 0x82000000 0x82020000 0x8000;
+sf probe 0;sf erase 0x0 0x20000;sf write 0x82000000 0x0 0x20000;sf read 0x83000000 0x0 0x20000;cmp 0x82000000 0x83000000 0x8000
+
+Flash uboot 2. stage
+setenv autoload no;dhcp;mw 0x82000000 0xffffffff 0x20000;tftp 0x82000000 u-boot.img;tftp 0x82040000 u-boot.img;cmp 0x82000000 0x82040000 0x10000;
+sf probe 0;sf erase 0x20000 0x40000;sf write 0x82000000 0x20000 0x40000;sf read 0x83000000 0x20000 0x40000;cmp 0x82000000 0x83000000 0x10000
+
+
+Flash uboot 1. and 2. stage
+setenv autoload no;dhcp;mw.b 0x82000000 0xffffffff 0x120000;tftp 0x82000000 MLO.spi;tftp 0x82060000 MLO.spi;tftp 0x82020000 u-boot.img;tftp 0x82080000 u-boot.img;cmp.b 0x82000000 0x82060000 0x60000;
+sf probe 0;sf erase 0x0 0x60000;sf write 0x82000000 0x0 0x60000;sf read 0x820C0000 0x0 0x60000;cmp.b 0x82000000 0x820C0000 0x60000
+
+Test only: uboot 2.stage
+setenv autoload no;dhcp;tftp 0x800fffc0 u-boot.img;go 80100000
+
+
+Kernel:
+setenv autoload no;dhcp;tftp uImage
+setenv autoload no;dhcp;tftp uImage_release
+nand bad;nandecc hw 2;nand erase 200000 500000;nand write 82000000 200000 500000
+
+sf probe 0;sf erase 80000 380000;sf write 82000000 80000 380000
+
+
+
+tftp -g -r /tftpboot/MLO.spi -l MLO.spi 192.168.1.99;tftp -g -r /tftpboot/u-boot.bin -l u-boot.bin 192.168.1.99;tftp -g -r /tftpboot/u-boot_env1.bin -l u-boot_env1.bin 192.168.1.99;tftp -g -r /tftpboot/u-boot_env2.bin -l u-boot_env2.bin 192.168.1.99;tftp -g -r /tftpboot/uImage -l uImage 192.168.1.99
+
+u-boot unter Linux:
+flash_erase /dev/mtd0 0 0;flash_erase /dev/mtd1 0 0;flash_erase /dev/mtd2 0 0;flash_erase /dev/mtd3 0 0;cat MLO.spi > /dev/mtd0;cat u-boot.bin > /dev/mtd1;cat u-boot_env1.bin > /dev/mtd2;cat u-boot_env2.bin > /dev/mtd3
+
+kernel unter Linux:
+flash_erase /dev/mtd14 0 0;cat uImage > /dev/mtd14
